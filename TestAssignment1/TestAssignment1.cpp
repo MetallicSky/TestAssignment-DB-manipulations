@@ -1,11 +1,8 @@
-﻿// TestAssignment1.cpp : Defines the entry point for the application.
-//
-
-#include "TestAssignment1.h"
+﻿#include "TestAssignment1.h"
 
 using namespace std;
 
-enum class mode {database_creation = 0};
+enum class Mode {database_creation = 0};
 
 constexpr std::string_view modeTypes[] =
 {
@@ -14,18 +11,32 @@ constexpr std::string_view modeTypes[] =
 
 int main(int argc, char* argv[])
 {
-    int modeNum;
     switch (argc) {
-    case 1:
+    case 1: {
         std::cout << "No arguement detected\n";
+    }
         break;
-    case 2:
+    case 2: {
+        int modeNum;
         modeNum = atoi(argv[1]);
         modeNum--;
+        const int modesNum = 0; // maximum amount of modes minus 1
+        if (modeNum < 0 || modeNum > modesNum) {
+            std::cout << "Unknown usage mode: " << modeNum + 1 << "\n";
+            break;
+        }
+        
         std::cout << "Usage mode: " << modeTypes[modeNum] << "\n";
+        Mode mode = static_cast<Mode>(modeNum);
+        switch (mode) {
+        case Mode::database_creation:
+            break;
+        }
+    }
         break;
-    default:
+    default: {
         std::cout << "Too many arguements detected\n";
+    }
     }
     return 0;
 }
