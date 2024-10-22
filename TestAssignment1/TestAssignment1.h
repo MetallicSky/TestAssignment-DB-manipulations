@@ -6,5 +6,8 @@
 #include <iostream>
 #include <sqlite3.h>
 #include <string>
+#include <fstream>
+
+#include "workerDB.h"
 
 // TODO: Reference additional headers your program requires here.
