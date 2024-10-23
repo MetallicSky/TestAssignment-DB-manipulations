@@ -3,6 +3,11 @@
 #include <string>
 #include <sqlite3.h>
 #include <regex>
+#include <ctime>
+#include <sstream>
+
+using std::string;
+using std::cout;
 
 class Worker {
 public:
@@ -13,22 +18,23 @@ public:
         unknwn
     };
 
-    std::string getName();
-    bool setName(const std::string& newName);
-    std::string getBirthDate();
-    bool setBirthDate(const std::string& newBirthDate);
-    std::string getSex();
-    int getSexNum();
-    bool setSex(const std::string& newSex);
+    string getName() const;
+    bool setName(const string& newName);
+    string getBirthDate() const;
+    bool setBirthDate(const string& newBirthDate);
+    string getSex() const;
+    int getSexNum() const;
+    bool setSex(const string& newSex);
     bool setSexNum(const int& newSex);
 
-    
+    bool sendToDB(Database& db) const;
+    int getAge() const;
 
-    Worker(const std::string& name, const std::string& birthDate, const int& sex); // sex - male = 0, female = 1, unknwn = 2
-    Worker(const std::string& name, const std::string& birthDate, const std::string& sex); // sex - male = 0, female = 1, unknwn = 2
+    Worker(const string& name, const string& birthDate, const int& sex); // sex - male = 0, female = 1, unknwn = 2
+    Worker(const string& name, const string& birthDate, const string& sex); // sex - male = 0, female = 1, unknwn = 2
 private:
-    std::string name;
-    std::string birthDate;
+    string name;
+    string birthDate;
     Sex s_;
 };
 
@@ -37,9 +43,12 @@ private:
     sqlite3* db;
 
 public:
-    Database(const std::string& dbName);
+    Database();
+    Database(const string& dbName);
 
     ~Database();
 
+    bool bootDB(const string& dbName);
     bool createWorkersTable();
+    sqlite3* getDB() const;
 };

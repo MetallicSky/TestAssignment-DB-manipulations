@@ -7,6 +7,7 @@
 #include <sqlite3.h>
 #include <string>
 #include <fstream>
+#include <regex>
 
 #include "workerDB.h"
 

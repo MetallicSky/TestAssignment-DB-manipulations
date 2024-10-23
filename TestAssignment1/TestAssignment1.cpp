@@ -1,5 +1,8 @@
 ﻿#include "TestAssignment1.h"
 
+using std::cout;
+using std::string;
+using std::cerr;
 
 enum class Mode {database_creation = 0, new_entry};
 
@@ -9,35 +12,92 @@ constexpr std::string_view modeTypes[] =
     "new_entry"
 };
 
-bool databaseCreation() {
-    std::string dbName = "workers.db";
+bool databaseCreation(Database& db) {
+    string dbName = "workers.db";
     struct stat buffer;
     if (stat(dbName.c_str(), &buffer) == 0) {
-        std::cout << "Database \"" << dbName << "\" already exists!\n";
+        cout << "ERROR: Database \"" << dbName << "\" already exists!\n";
         return false;
     }
 
-    Database db(dbName);
+    db = Database(dbName);
     if (db.createWorkersTable())
         return true;
     else
         return false;
 }
 
-bool newEntry() {
-    std::string dbName = "worrkers.db";
-    struct stat buffer;
-    if (stat(dbName.c_str(), &buffer) != 0) {
-        std::cout << "Database \"" << dbName << "\" does not yet exist! Launch program in mode 1 first\n";
-        return false;
+Worker newEntryCheck(const int& argc, char* argv[]) {
+    int firstQuotes = 0;
+    int lastQuotes = 0;
+    Worker badEntry("BADENTRY", "0000-00-00", "unknwn"); // method returns bad entry if used entered data in incorrect format
+    Worker validEntry("EMPTY", "0000-00-00", "unknwn"); // these fields will be changed during the course of the work
+    for (int i = 2; i < argc; i++) {
+        cout << argv[i] << "\n";
     }
+    /* // UNTESTED, in case shell doesn't know how to work with quotes
+    for (int i = 2; i < argc; i++) {
+        string arg(argv[i]);
+        if (i == 2 && (arg.find("\"") == string::npos)) { // first arguement in loop should always contain quotes, as worker name is declared first
+            cerr << "ERROR: First arguement after mode arguement should always contain quotes\n";
+            return badEntry;
+        }
+        firstQuotes = i;
+        if (i != 2 && (arg.find("\"") != string::npos))
+            lastQuotes = i;
+    }
+    if (lastQuotes == 0) // means that the whole name doesn't contain space character and was read as one arguement
+        lastQuotes = firstQuotes;
+    if (argc - lastQuotes != 2) { // date and sex should always be without quotes
+        cerr << "ERROR: Quotes detected where date or sex should've been\n";
+        return badEntry;
+    }
+    string firstQ(argv[firstQuotes]);
+    if (firstQ.find("\"") != 0) { //first quotes should always be the first character of arguement 
+        cerr << "ERROR: Characters detected before first quotes (" << firstQ << ")\n";
+        return badEntry;
+    }
+    string lastQ(argv[lastQuotes]);
+    if (lastQ.find("\"") != lastQ.size() - 1) { //last quotes should always be the last character of arguement 
+        cerr << "ERROR: Characters detected after last quotes (" << lastQ << ")\n";
+        return badEntry;
+    }
+    */
+    string name = argv[2];
+    if (validEntry.setName(name) == false) { // setter will return false if there was an error while trying to set name
+        return badEntry;
+    }
+    /* // UNTESTED, in case shell doesn't know how to work with quotes
+    for (int i = firstQuotes; i <= lastQuotes; i++) {
+        string arg(argv[i]);
+        if (i == firstQuotes) // remove first quotes before pushing arg into name
+            arg.erase(0, 1);
+        if (i == lastQuotes) // remove last quotes before pushing arg into name
+            arg.pop_back();
+        name += arg;
+        if (i != lastQuotes) // add space if last quotes are in another arguement
+            name += " ";
+    }
+    */
+    string birthDate = argv[3];
+    if (validEntry.setBirthDate(birthDate) == false) { // setter will return false if date's format is incorrect
+        return badEntry;
+    }
+    string sex = argv[4];
+    if (validEntry.setSex(sex) == false) { // setter will return false if sex doesn't match any enum definition
+        return badEntry;
+    }
+
+    return validEntry;
 }
 
 int main(int argc, char* argv[])
 {
+    Database db;
+
     switch (argc) {
     case 1: {
-        std::cout << "No arguement detected\n";
+        cout << "ERROR: No arguement detected\n";
     }
         break;
     case 2: {
@@ -46,24 +106,42 @@ int main(int argc, char* argv[])
         modeNum--;
         const int modesNum = sizeof(modeTypes) / sizeof(modeTypes[0]) - 1; // total array bytes divide by bytes per one array element minus one byte where terminator character is located, resulting in array size
         if (modeNum < 0 || modeNum > modesNum) {
-            std::cout << "Unknown usage mode: " << modeNum + 1 << "\n";
+            cout << "ERROR: Unknown usage mode: " << modeNum + 1 << "\n";
             break;
         }
         
-        std::cout << "Usage mode: " << modeTypes[modeNum] << "\n";
+        cout << "Usage mode: " << modeTypes[modeNum] << "\n";
         Mode mode = static_cast<Mode>(modeNum);
         switch (mode) {
         case Mode::database_creation:
-            databaseCreation();
+            databaseCreation(db);
             break;
         case Mode::new_entry:
-            newEntry();
+            cout << "ERROR: Not enough arguements for mode 2 detected\n";
             break;
         }
     }
         break;
     default: {
-        std::cout << "Too many arguements detected\n";
+        if (atoi(argv[1]) != 2) { // mode 2 has 3 extra arguements
+            cout << "ERROR: Too many arguements detected\n";
+            return 0;
+        }
+        else {
+            cout << "Usage mode: new_entry\n";
+            if (argc < 5) {
+                cout << "ERROR: Not enough arguements for mode 2 detected\n";
+            }
+            else if (argc == 5) {
+                Worker newEntry = newEntryCheck(argc, argv);
+                if (newEntry.getName() != "BADENTRY" && newEntry.getBirthDate() != "0000-00-00" && newEntry.getSex() != "unknwn"); // making sure arguements we got were correct
+                    newEntry.sendToDB(db);
+
+            }
+            else if (argc > 5) {
+                cout << "ERROR: Too many arguements for mode 2 detected\n";
+            }
+        }
     }
     }
     return 0;
