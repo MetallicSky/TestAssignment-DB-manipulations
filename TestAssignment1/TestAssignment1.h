@@ -10,6 +10,7 @@
 #include <regex>
 #include <map>
 #include <random>
+#include <chrono>
 
 #include "Worker.h"
 #include "Database.h"

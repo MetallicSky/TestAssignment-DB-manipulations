@@ -5,14 +5,16 @@ using std::string;
 using std::cerr;
 using std::to_string;
 
-enum class Mode {database_creation = 0, new_entry, database_print, batch_insertion};
+enum class Mode {database_creation = 0, new_entry, database_print, batch_insertion, database_search
+};
 
 constexpr std::string_view modeTypes[] =
 {
     "database_creation",
     "new_entry",
     "database_print",
-    "batch_insertion"
+    "batch_insertion",
+    "database_search"
 };
 
 string random_string(int& length, const string& characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
@@ -138,6 +140,49 @@ bool batchInsertion(Database& db, const int& amount) {
     return true;
 }
 
+bool databaseSearch(Database& db) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::vector<Worker> matches;
+
+    // SQL query to select workers where Name starts with 'F' and Sex is 0
+    const char* sqlQuery = "SELECT * FROM Workers WHERE Name LIKE 'F%' AND Sex = 0;";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db.getDB(), sqlQuery, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "ERROR: statement preparation failed: " << sqlite3_errmsg(db.getDB()) << std::endl;
+        return false;
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        // Retrieve values for each column
+        int id = sqlite3_column_int(stmt, 0);
+        std::string name(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+        std::string birthDate(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+        int sex = (sqlite3_column_int(stmt, 3));
+
+        Worker worker(name, birthDate, sex);
+        matches.push_back(worker);
+    }
+
+    sqlite3_finalize(stmt);
+
+    // Minimum SQL usage
+    /*
+    for (int i = 1; i <= db.getSize(); i++) { // filling Map in order to get unique combinations
+        const Worker worker = db.getEntry(i);
+        if (worker.getName().at(0) == 'F' && worker.getSex() == "male")
+            matches.push_back(worker);
+    }
+    */
+   
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    cout << "Found " << matches.size() << " entries, time took: " << + duration.count() << " ms\n";
+    return true;
+    
+}
+
 Worker newEntryCheck(const int& argc, char* argv[]) {
     int firstQuotes = 0;
     int lastQuotes = 0;
@@ -237,6 +282,10 @@ int main(int argc, char* argv[])
         case Mode::batch_insertion:
             db.bootDB("workers.db");
             batchInsertion(db, 1000000);
+            break;
+        case Mode::database_search:
+            db.bootDB("workers.db");
+            databaseSearch(db);
             break;
         }
     }
