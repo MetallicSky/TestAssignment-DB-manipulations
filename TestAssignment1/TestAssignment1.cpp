@@ -20,7 +20,7 @@ bool databaseCreation(Database& db) {
         return false;
     }
 
-    db = Database(dbName);
+    db.bootDB(dbName);
     if (db.createWorkersTable())
         return true;
     else
@@ -134,7 +134,8 @@ int main(int argc, char* argv[])
             }
             else if (argc == 5) {
                 Worker newEntry = newEntryCheck(argc, argv);
-                if (newEntry.getName() != "BADENTRY" && newEntry.getBirthDate() != "0000-00-00" && newEntry.getSex() != "unknwn"); // making sure arguements we got were correct
+                db.bootDB("workers.db");
+                if (newEntry.getName() != "BADENTRY" && newEntry.getBirthDate() != "0000-00-00" && newEntry.getSex() != "unknwn") // making sure arguements we got were correct
                     newEntry.sendToDB(db);
 
             }

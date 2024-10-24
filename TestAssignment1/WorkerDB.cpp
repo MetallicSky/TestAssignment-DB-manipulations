@@ -12,7 +12,7 @@ bool Worker::setName(const string& newName)
 		return true;
 	}
 	catch (const char* error_message) {
-		std::cerr << error_message;
+		cerr << error_message;
 		return false;
 	}
 }
@@ -29,12 +29,12 @@ bool Worker::setBirthDate(const string& newBirthDate)
 		if (std::regex_match(newBirthDate, dateRegex))
 			birthDate = newBirthDate;
 		else {
-			std::cerr << "ERROR: Invalid date format (" << newBirthDate << "). Only YYYY-MM-DD is accepted";
+			cerr << "ERROR: Invalid date format (" << newBirthDate << "). Only YYYY-MM-DD is accepted";
 			return false;
 		}
 	}
 	catch (const char* error_message) {
-		std::cerr << error_message;
+		cerr << error_message;
 		return false;
 	}
 	return true;
@@ -74,7 +74,7 @@ bool Worker::setSex(const string& newSex)
 		s_ = Sex::unknwn;
 	}
 	else {
-		std::cerr << "ERROR: Invalid sex (" << newSex << ")\n";
+		cerr << "ERROR: Invalid sex (" << newSex << ")\n";
 		return false;
 	}
 	return true;
@@ -93,7 +93,7 @@ bool Worker::setSexNum(const int& newSex)
 		s_ = Sex::unknwn;
 		break;
 	default:
-		std::cerr << "ERROR: Invalid sex (" << newSex << ")\n";
+		cerr << "ERROR: Invalid sex (" << newSex << ")\n";
 		return false;
 	}
 	return true;
@@ -101,34 +101,60 @@ bool Worker::setSexNum(const int& newSex)
 
 bool Worker::sendToDB(Database& db) const
 {
+	cout << "sendToDB method start\n";
 	// SQL insert statement with placeholders for the worker's data
 	string insertSQL = "INSERT INTO Workers (Name, BirthDate, Sex) VALUES (?, ?, ?);";
 	sqlite3_stmt* stmt;
-	
+	cout << "sendToDB preparing statement \n";
 	// Prepare the SQL statement
 	if (sqlite3_prepare_v2(db.getDB(), insertSQL.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cerr << "ERROR: Preparing statement failed : " << sqlite3_errmsg(db.getDB()) << "\n";
+		cerr << "ERROR: Preparing statement failed : " << sqlite3_errmsg(db.getDB()) << "\n";
 		return false;
 	}
 
-	// Bind the worker data to the statement (1 = first placeholder, 2 = second, etc.)
-	sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 2, birthDate.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_int(stmt, 3, static_cast<int>(s_));
-
-	// Execute the statement
-	if (sqlite3_step(stmt) != SQLITE_DONE) {
-		std::cerr << "ERROR: Executing statement failed: " << sqlite3_errmsg(db.getDB()) << std::endl;
+	cout << "sendToDB binding name\n";
+	// Bind the worker's name to the first placeholder
+	if (sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+		cerr << "ERROR: binding name failed: " << sqlite3_errmsg(db.getDB()) << "\n";
 		sqlite3_finalize(stmt);
 		return false;
 	}
 
-	// Finalize the statement (clean up)
-	sqlite3_finalize(stmt);
-	std::cout << "Worker entry added to the database successfully." << std::endl;
-	return true;
+	cout << "sendToDB binding date\n";
+	// Bind the worker's birth date to the second placeholder
+	if (sqlite3_bind_text(stmt, 2, birthDate.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+		cerr << "ERROR: binding birth date failed: " << sqlite3_errmsg(db.getDB()) << "\n";
+		sqlite3_finalize(stmt);
+		return false;
+	}
 
-	return false;
+	cout << "sendToDB binding sex\n";
+	// Bind the worker's sex (as an integer) to the third placeholder
+	if (sqlite3_bind_int(stmt, 3, static_cast<int>(s_)) != SQLITE_OK) {
+		cerr << "ERROR: binding sex failed: " << sqlite3_errmsg(db.getDB()) << "\n";
+		sqlite3_finalize(stmt);
+		return false;
+	}
+
+	/*
+	// Bind the worker data to the statement (1 = first placeholder, 2 = second, etc.)
+	sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 2, birthDate.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_int(stmt, 3, static_cast<int>(s_));
+	*/
+
+	cout << "sendToDB executing statement\n";
+	// Execute the statement
+	if (sqlite3_step(stmt) != SQLITE_DONE) {
+		cerr << "ERROR: Executing statement failed: " << sqlite3_errmsg(db.getDB()) << "\n";
+		sqlite3_finalize(stmt);
+		return false;
+	}
+	cout << "sendToDB finalizing statement\n";
+	// Finalize the statement
+	sqlite3_finalize(stmt);
+	cout << "Worker entry added to the database successfully." << "\n";
+	return true;
 }
 
 int Worker::getAge() const
@@ -175,7 +201,7 @@ Database::Database()
 Database::Database(const string& dbName)
 {
 	if (sqlite3_open(dbName.c_str(), &db)) {
-		std::cerr << "ERROR: opening database failed: " << sqlite3_errmsg(db) << std::endl;
+		cerr << "ERROR: opening database failed: " << sqlite3_errmsg(db) << "\n";
 		db = nullptr;
 	}
 }
@@ -190,7 +216,7 @@ Database::~Database()
 bool Database::bootDB(const string& dbName)
 {
 	if (sqlite3_open(dbName.c_str(), &db)) {
-		std::cerr << "ERROR: opening database failed: " << sqlite3_errmsg(db) << std::endl;
+		cerr << "ERROR: opening database failed: " << sqlite3_errmsg(db) << "\n";
 		db = nullptr;
 		return false;
 	}
@@ -202,16 +228,16 @@ bool Database::createWorkersTable()
 	const char* sqlCreateTable = "CREATE TABLE IF NOT EXISTS Workers ("
 		"ID INTEGER PRIMARY KEY AUTOINCREMENT, "
 		"Name TEXT NOT NULL, "
-		"BirthDate DATE NOT NULL, "
+		"BirthDate TEXT NOT NULL, "
 		"Sex INTEGER NOT NULL);";
 
 	char* errMsg = nullptr;
 	if (sqlite3_exec(db, sqlCreateTable, nullptr, nullptr, &errMsg) != SQLITE_OK) {
-		std::cerr << "ERROR: creating table failed: " << errMsg << std::endl;
+		cerr << "ERROR: creating table failed: " << errMsg << "\n";
 		sqlite3_free(errMsg);
 		return false;
 	}
-	std::cout << "Workers table created successfully." << std::endl;
+	cout << "Workers table created successfully." << "\n";
 	return true;
 }
 

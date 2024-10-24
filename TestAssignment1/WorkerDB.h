@@ -8,6 +8,22 @@
 
 using std::string;
 using std::cout;
+using std::cerr;
+
+class Database {
+private:
+    sqlite3* db;
+
+public:
+    Database();
+    Database(const string& dbName);
+
+    ~Database();
+
+    bool bootDB(const string& dbName);
+    bool createWorkersTable();
+    sqlite3* getDB() const;
+};
 
 class Worker {
 public:
@@ -36,19 +52,4 @@ private:
     string name;
     string birthDate;
     Sex s_;
-};
-
-class Database {
-private:
-    sqlite3* db;
-
-public:
-    Database();
-    Database(const string& dbName);
-
-    ~Database();
-
-    bool bootDB(const string& dbName);
-    bool createWorkersTable();
-    sqlite3* getDB() const;
 };
