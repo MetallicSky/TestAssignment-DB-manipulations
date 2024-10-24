@@ -4,12 +4,13 @@ using std::cout;
 using std::string;
 using std::cerr;
 
-enum class Mode {database_creation = 0, new_entry};
+enum class Mode {database_creation = 0, new_entry, database_print};
 
 constexpr std::string_view modeTypes[] =
 {
     "database_creation",
-    "new_entry"
+    "new_entry",
+    "database_print"
 };
 
 bool databaseCreation(Database& db) {
@@ -25,6 +26,58 @@ bool databaseCreation(Database& db) {
         return true;
     else
         return false;
+}
+
+bool databasePrint(Database& db) {
+    
+    // Minimum SQL usage (with std::map)
+    std::map<string, string> uniqueEntries;
+    cout << "All entries:\n";
+    for (int i = 1; i <= db.getSize(); i++) { // filling Map in order to get unique combinations
+        const Worker worker = db.getEntry(i);
+        const string nameDate = worker.getName() + " " + worker.getBirthDate();
+        const string sexAge = worker.getSex() + " " + std::to_string(worker.getAge());
+        uniqueEntries.insert({nameDate, sexAge});
+
+        // cout << worker.toString() << "\n"; // alternative way for printing
+        cout << worker << "\n"; // printing using overloaded << operator
+    }
+    cout << "Unique entries:\n";
+    for (auto i : uniqueEntries)
+        cout << i.first << " " << i.second << "\n";
+
+    return true;
+
+    /*
+    // Maximum SQL usage 
+    const char* sqlSelectUnique = "SELECT Name, BirthDate, Sex FROM Workers GROUP BY Name, BirthDate ORDER BY Name;";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db.getDB(), sqlSelectUnique, -1, &stmt, nullptr) != SQLITE_OK) {
+        cerr << "Failed to execute query: " << sqlite3_errmsg(db.getDB()) << std::endl;
+        return false;
+    }
+
+    cout << "Unique entries:\n";
+
+    // Loop through the results
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        string name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        string birthDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        int sex = (sqlite3_column_int(stmt, 2));
+
+        Worker worker(name, birthDate, sex);
+
+        // Calculate worker's age using the Worker class method
+        int age = worker.getAge();
+
+        // Output worker details
+        std::cout << name << " " << birthDate << " " << worker.getSex() << " " << age << "\n";
+    }
+
+    sqlite3_finalize(stmt);  // Clean up statement
+    return true;
+    */
 }
 
 Worker newEntryCheck(const int& argc, char* argv[]) {
@@ -119,6 +172,10 @@ int main(int argc, char* argv[])
         case Mode::new_entry:
             cout << "ERROR: Not enough arguements for mode 2 detected\n";
             break;
+        case Mode::database_print:
+            db.bootDB("workers.db");
+            databasePrint(db);
+            break;
         }
     }
         break;
@@ -135,9 +192,10 @@ int main(int argc, char* argv[])
             else if (argc == 5) {
                 Worker newEntry = newEntryCheck(argc, argv);
                 db.bootDB("workers.db");
-                if (newEntry.getName() != "BADENTRY" && newEntry.getBirthDate() != "0000-00-00" && newEntry.getSex() != "unknwn") // making sure arguements we got were correct
+                if (newEntry.getName() != "BADENTRY" || newEntry.getBirthDate() != "0000-00-00" || newEntry.getSex() != "unknwn") // making sure arguements we got were correct
                     newEntry.sendToDB(db);
-
+                else
+                    cout << "ERROR: Invalid entry\n";
             }
             else if (argc > 5) {
                 cout << "ERROR: Too many arguements for mode 2 detected\n";

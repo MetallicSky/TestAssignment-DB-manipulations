@@ -3,12 +3,12 @@
 #
 
 # Add source to this project's executable.
-add_executable (TestAssignment1 "TestAssignment1.cpp" "TestAssignment1.h" "WorkerDB.h" "WorkerDB.cpp")
+add_executable (TestAssignment1 "TestAssignment1.cpp" "TestAssignment1.h" "Worker.h" "Worker.cpp" "Database.h" "Database.cpp")
 
 # SQLite
 set(SQLITE3_SRC "${CMAKE_SOURCE_DIR}/external/sqlite/sqlite3.c")
 set(SQLITE3_HEADER "${CMAKE_SOURCE_DIR}/external/sqlite/sqlite3.h")
-add_library(sqlite3 STATIC ${SQLITE3_SRC} "WorkerDB.h" "WorkerDB.cpp")
+add_library(sqlite3 STATIC ${SQLITE3_SRC} "Worker.h" "Worker.cpp" "Database.h" "Database.cpp")
 target_include_directories(sqlite3 PUBLIC ${CMAKE_SOURCE_DIR}/external/sqlite)
 target_link_libraries(TestAssignment1 PRIVATE sqlite3)
 

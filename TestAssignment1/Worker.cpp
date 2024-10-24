@@ -1,4 +1,4 @@
-#include "WorkerDB.h"
+#include "Worker.h"
 
 string Worker::getName() const
 {
@@ -80,7 +80,7 @@ bool Worker::setSex(const string& newSex)
 	return true;
 }
 
-bool Worker::setSexNum(const int& newSex)
+bool Worker::setSex(const int& newSex)
 {
 	switch (newSex) {
 	case 0:
@@ -180,11 +180,16 @@ int Worker::getAge() const
 	return age;
 }
 
+string Worker::toString() const
+{
+	return name + " " + birthDate + " " + getSex();
+}
+
 Worker::Worker(const string& name, const string& birthDate, const int& sex)
 {
 	setName(name);
 	setBirthDate(birthDate);
-	setSexNum(sex);
+	setSex(sex);
 }
 
 Worker::Worker(const string& name, const string& birthDate, const string& sex)
@@ -194,53 +199,8 @@ Worker::Worker(const string& name, const string& birthDate, const string& sex)
 	setSex(sex);
 }
 
-Database::Database()
+std::ostream& operator<<(std::ostream& os, const Worker& worker)
 {
-}
-
-Database::Database(const string& dbName)
-{
-	if (sqlite3_open(dbName.c_str(), &db)) {
-		cerr << "ERROR: opening database failed: " << sqlite3_errmsg(db) << "\n";
-		db = nullptr;
-	}
-}
-
-Database::~Database()
-{
-	if (db) {
-		sqlite3_close(db);
-	}
-}
-
-bool Database::bootDB(const string& dbName)
-{
-	if (sqlite3_open(dbName.c_str(), &db)) {
-		cerr << "ERROR: opening database failed: " << sqlite3_errmsg(db) << "\n";
-		db = nullptr;
-		return false;
-	}
-	return true;
-}
-
-bool Database::createWorkersTable()
-{
-	const char* sqlCreateTable = "CREATE TABLE IF NOT EXISTS Workers ("
-		"ID INTEGER PRIMARY KEY AUTOINCREMENT, "
-		"Name TEXT NOT NULL, "
-		"BirthDate TEXT NOT NULL, "
-		"Sex INTEGER NOT NULL);";
-
-	char* errMsg = nullptr;
-	if (sqlite3_exec(db, sqlCreateTable, nullptr, nullptr, &errMsg) != SQLITE_OK) {
-		cerr << "ERROR: creating table failed: " << errMsg << "\n";
-		sqlite3_free(errMsg);
-		return false;
-	}
-	cout << "Workers table created successfully." << "\n";
-	return true;
-}
-
-sqlite3* Database::getDB() const {
-	return db;
+	os << worker.getName() << " " << worker.getBirthDate() << " " << worker.getSex();
+	return os;
 }

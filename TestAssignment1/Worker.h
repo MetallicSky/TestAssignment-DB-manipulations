@@ -6,24 +6,13 @@
 #include <ctime>
 #include <sstream>
 
+#include "Database.h"
+
 using std::string;
 using std::cout;
 using std::cerr;
 
-class Database {
-private:
-    sqlite3* db;
-
-public:
-    Database();
-    Database(const string& dbName);
-
-    ~Database();
-
-    bool bootDB(const string& dbName);
-    bool createWorkersTable();
-    sqlite3* getDB() const;
-};
+class Database;
 
 class Worker {
 public:
@@ -41,10 +30,12 @@ public:
     string getSex() const;
     int getSexNum() const;
     bool setSex(const string& newSex);
-    bool setSexNum(const int& newSex);
+    bool setSex(const int& newSex);
 
     bool sendToDB(Database& db) const;
     int getAge() const;
+    string toString() const;
+    friend std::ostream& operator<<(std::ostream& os, const Worker& worker);
 
     Worker(const string& name, const string& birthDate, const int& sex); // sex - male = 0, female = 1, unknwn = 2
     Worker(const string& name, const string& birthDate, const string& sex); // sex - male = 0, female = 1, unknwn = 2

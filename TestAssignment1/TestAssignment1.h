@@ -8,7 +8,9 @@
 #include <string>
 #include <fstream>
 #include <regex>
+#include <map>
 
-#include "workerDB.h"
+#include "Worker.h"
+#include "Database.h"
 
 // TODO: Reference additional headers your program requires here.
