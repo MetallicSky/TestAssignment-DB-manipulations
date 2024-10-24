@@ -29,4 +29,5 @@ public:
     size_t getSize() const;
     sqlite3* getDB() const;
     Worker getEntry(const int& id) const;
+    bool insertBatch(const std::vector<Worker>& workers);
 };

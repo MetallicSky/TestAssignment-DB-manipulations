@@ -106,3 +106,47 @@ Worker Database::getEntry(const int& id) const
 
 	return validEntry;
 }
+
+bool Database::insertBatch(const std::vector<Worker>& workers)
+{
+	const char* sqlInsert = "INSERT INTO Workers (Name, BirthDate, Sex) VALUES (?, ?, ?);";
+	sqlite3_stmt* stmt;
+
+	// Begin transaction
+	if (sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr) != SQLITE_OK) {
+		cerr << "ERROR: transaction begin failed : " << sqlite3_errmsg(db) << "\n";
+		return false;
+	}
+
+	if (sqlite3_prepare_v2(db, sqlInsert, -1, &stmt, nullptr) != SQLITE_OK) {
+		cerr << "ERROR: statement preparation failed: " << sqlite3_errmsg(db) << "\n";
+		return false;
+	}
+
+	// Loop through the array of workers and bind their values to the SQL statement
+	for (const Worker& worker : workers) {
+		sqlite3_bind_text(stmt, 1, worker.getName().c_str(), -1, SQLITE_STATIC);
+		sqlite3_bind_text(stmt, 2, worker.getBirthDate().c_str(), -1, SQLITE_STATIC);
+		sqlite3_bind_int(stmt, 3, static_cast<int>(worker.getSexNum())); // Assuming Sex is stored as an integer
+
+		if (sqlite3_step(stmt) != SQLITE_DONE) {
+			cerr << "ERROR: statement exuciton failed: " << sqlite3_errmsg(db) << "\n";
+			sqlite3_finalize(stmt);
+			sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr); // Rollback in case of error
+			return false;
+		}
+
+		sqlite3_reset(stmt); // Reset the statement to be reused for the next worker
+	}
+
+	// Finalize the statement
+	sqlite3_finalize(stmt);
+
+	// Commit the transaction
+	if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, nullptr) != SQLITE_OK) {
+		cerr << "ERROR: transaction commit failed: " << sqlite3_errmsg(db) << "\n";
+		return false;
+	}
+
+	return true;
+}

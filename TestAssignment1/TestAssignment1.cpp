@@ -4,13 +4,14 @@ using std::cout;
 using std::string;
 using std::cerr;
 
-enum class Mode {database_creation = 0, new_entry, database_print};
+enum class Mode {database_creation = 0, new_entry, database_print, batch_insertion};
 
 constexpr std::string_view modeTypes[] =
 {
     "database_creation",
     "new_entry",
-    "database_print"
+    "database_print",
+    "batch_insertion"
 };
 
 bool databaseCreation(Database& db) {
@@ -30,7 +31,35 @@ bool databaseCreation(Database& db) {
 
 bool databasePrint(Database& db) {
     
+    // Maximum SQL usage 
+    const char* sqlSelectUnique = "SELECT Name, BirthDate, Sex FROM Workers GROUP BY Name, BirthDate ORDER BY Name;";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db.getDB(), sqlSelectUnique, -1, &stmt, nullptr) != SQLITE_OK) {
+        cerr << "Failed to execute query: " << sqlite3_errmsg(db.getDB()) << std::endl;
+        return false;
+    }
+
+    cout << "Unique entries:\n";
+
+    // Loop through  results
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        string name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        string birthDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        int sex = (sqlite3_column_int(stmt, 2));
+
+        Worker worker(name, birthDate, sex);
+
+        int age = worker.getAge();
+
+        std::cout << name << " " << birthDate << " " << worker.getSex() << " " << age << "\n";
+    }
+
+    sqlite3_finalize(stmt);  // Clean up statement
+    return true;
+
     // Minimum SQL usage (with std::map)
+    /*
     std::map<string, string> uniqueEntries;
     cout << "All entries:\n";
     for (int i = 1; i <= db.getSize(); i++) { // filling Map in order to get unique combinations
@@ -47,37 +76,12 @@ bool databasePrint(Database& db) {
         cout << i.first << " " << i.second << "\n";
 
     return true;
-
-    /*
-    // Maximum SQL usage 
-    const char* sqlSelectUnique = "SELECT Name, BirthDate, Sex FROM Workers GROUP BY Name, BirthDate ORDER BY Name;";
-    sqlite3_stmt* stmt;
-
-    if (sqlite3_prepare_v2(db.getDB(), sqlSelectUnique, -1, &stmt, nullptr) != SQLITE_OK) {
-        cerr << "Failed to execute query: " << sqlite3_errmsg(db.getDB()) << std::endl;
-        return false;
-    }
-
-    cout << "Unique entries:\n";
-
-    // Loop through the results
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        string name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        string birthDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        int sex = (sqlite3_column_int(stmt, 2));
-
-        Worker worker(name, birthDate, sex);
-
-        // Calculate worker's age using the Worker class method
-        int age = worker.getAge();
-
-        // Output worker details
-        std::cout << name << " " << birthDate << " " << worker.getSex() << " " << age << "\n";
-    }
-
-    sqlite3_finalize(stmt);  // Clean up statement
-    return true;
     */
+}
+
+bool batchInsertion(Database& db, const int& amount) {
+
+    return true;
 }
 
 Worker newEntryCheck(const int& argc, char* argv[]) {
@@ -175,6 +179,10 @@ int main(int argc, char* argv[])
         case Mode::database_print:
             db.bootDB("workers.db");
             databasePrint(db);
+            break;
+        case Mode::batch_insertion:
+            db.bootDB("workers.db");
+            batchInsertion(db, 1000000);
             break;
         }
     }
