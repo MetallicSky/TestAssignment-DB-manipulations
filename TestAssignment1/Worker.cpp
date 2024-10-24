@@ -1,4 +1,5 @@
 #include "Worker.h"
+#include "Worker.h"
 
 string Worker::getName() const
 {
@@ -183,6 +184,13 @@ int Worker::getAge() const
 string Worker::toString() const
 {
 	return name + " " + birthDate + " " + getSex();
+}
+
+Worker::Worker()
+{
+	name = "John Doe";
+	birthDate = "1984-04-20";
+	s_ = Sex::male;
 }
 
 Worker::Worker(const string& name, const string& birthDate, const int& sex)

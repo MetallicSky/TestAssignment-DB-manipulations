@@ -3,6 +3,7 @@
 using std::cout;
 using std::string;
 using std::cerr;
+using std::to_string;
 
 enum class Mode {database_creation = 0, new_entry, database_print, batch_insertion};
 
@@ -13,6 +14,34 @@ constexpr std::string_view modeTypes[] =
     "database_print",
     "batch_insertion"
 };
+
+string random_string(int& length, const string& characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+{
+    // Create a random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    std::uniform_int_distribution<> distribution(
+        0, characters.size() - 1);
+
+    // Generate the random string
+    string random_string;
+    for (int i = 0; i < length; ++i) {
+        random_string
+            += characters[distribution(generator)];
+    }
+
+    return random_string;
+}
+
+int random_int(int x, int y) {
+    std::random_device rd; // Seed with a real random value, if available
+    std::mt19937 gen(rd()); // Initialize the random number generator with the seed
+    std::uniform_int_distribution<> distrib(x, y); // Create a distribution range between x and y (inclusive)
+    return distrib(gen); // Generate and return the random number
+}
 
 bool databaseCreation(Database& db) {
     string dbName = "workers.db";
@@ -80,6 +109,31 @@ bool databasePrint(Database& db) {
 }
 
 bool batchInsertion(Database& db, const int& amount) {
+    std::vector<Worker> workers(amount);
+    int specialCount = 0;
+    for (int i = 0; i < amount; i++) {
+        int nameLength = 5;
+        string name = random_string(nameLength);
+        string month = to_string(random_int(1, 12));
+        if (month.size() == 1) // so month would be 04 instead of 4
+            month = "0" + month;
+        string day = to_string(random_int(1, 30));
+        if (day.size() == 1) // so day would be 04 instead of 4
+            day = "0" + day;
+        string date = to_string(random_int(1970, 2005)) + 
+            "-" + month +
+            "-" + day;
+        int sex = random_int(0, 2);
+        if (i % 1000 == 0 && specialCount < 100) { // special F male
+            name.replace(0, 1, "F");
+            sex = 0;
+            specialCount++;
+        }
+        workers[i].setName(name);
+        workers[i].setBirthDate(date);
+        workers[i].setSex(sex);
+    }
+    db.insertBatch(workers);
 
     return true;
 }

@@ -125,8 +125,8 @@ bool Database::insertBatch(const std::vector<Worker>& workers)
 
 	// Loop through the array of workers and bind their values to the SQL statement
 	for (const Worker& worker : workers) {
-		sqlite3_bind_text(stmt, 1, worker.getName().c_str(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(stmt, 2, worker.getBirthDate().c_str(), -1, SQLITE_STATIC);
+		sqlite3_bind_text(stmt, 1, worker.getName().c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(stmt, 2, worker.getBirthDate().c_str(), -1, SQLITE_TRANSIENT);
 		sqlite3_bind_int(stmt, 3, static_cast<int>(worker.getSexNum())); // Assuming Sex is stored as an integer
 
 		if (sqlite3_step(stmt) != SQLITE_DONE) {
@@ -148,5 +148,6 @@ bool Database::insertBatch(const std::vector<Worker>& workers)
 		return false;
 	}
 
+	cout << "All " << workers.size() << " entries have been added into database!\n";
 	return true;
 }

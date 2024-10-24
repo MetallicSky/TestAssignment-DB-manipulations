@@ -37,6 +37,7 @@ public:
     string toString() const;
     friend std::ostream& operator<<(std::ostream& os, const Worker& worker);
 
+    Worker();
     Worker(const string& name, const string& birthDate, const int& sex); // sex - male = 0, female = 1, unknwn = 2
     Worker(const string& name, const string& birthDate, const string& sex); // sex - male = 0, female = 1, unknwn = 2
 private:
