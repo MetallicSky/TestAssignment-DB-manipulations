@@ -5,7 +5,8 @@ using std::string;
 using std::cerr;
 using std::to_string;
 
-enum class Mode {database_creation = 0, new_entry, database_print, batch_insertion, database_search
+enum class Mode {database_creation = 0, new_entry, 
+    database_print, batch_insertion, database_search, fast_search
 };
 
 constexpr std::string_view modeTypes[] =
@@ -14,7 +15,8 @@ constexpr std::string_view modeTypes[] =
     "new_entry",
     "database_print",
     "batch_insertion",
-    "database_search"
+    "database_search",
+    "fast_search"
 };
 
 string random_string(int& length, const string& characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
@@ -183,6 +185,33 @@ bool databaseSearch(Database& db) {
     
 }
 
+bool fastSearch(Database& db) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    int matchCount = 0;
+    const char* sqlQuery = "SELECT COUNT(*) FROM Workers WHERE Name LIKE 'F%' AND Sex = 0;";
+
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db.getDB(), sqlQuery, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "ERROR: statement preparation failed: " << sqlite3_errmsg(db.getDB()) << std::endl;
+        return false;
+    }
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        matchCount = sqlite3_column_int(stmt, 0); // Retrieve the count from the first column
+    }
+
+    sqlite3_finalize(stmt);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+
+    std::cout << "Found " << matchCount << " entries, time took: " << duration.count() << " ms\n";
+
+
+    return true;
+}
+
 Worker newEntryCheck(const int& argc, char* argv[]) {
     int firstQuotes = 0;
     int lastQuotes = 0;
@@ -286,6 +315,10 @@ int main(int argc, char* argv[])
         case Mode::database_search:
             db.bootDB("workers.db");
             databaseSearch(db);
+            break;
+        case Mode::fast_search:
+            db.bootDB("workers.db");
+            fastSearch(db);
             break;
         }
     }
